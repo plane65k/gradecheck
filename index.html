@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Canvas Dashboard</title>
+    <style>
+        :root { --bg: #f4f7f6; --primary: #0055a2; --text: #333; --card: #ffffff; --border: #e0e0e0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .dashboard-container { width: 100%; max-width: 1000px; }
+        
+        /* Top Bar & Settings */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+        .top-bar h1 { margin: 0; }
+        .settings-btn { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: auto; transition: 0.2s; }
+        .settings-btn:hover { background: #5a6268; }
+
+        /* Controls Card (Can be hidden) */
+        .controls-card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; transition: all 0.3s ease; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { background-color: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
+        button:hover { background-color: #003a70; }
+        button:disabled { background-color: #999; cursor: not-allowed; }
+        .error { color: #d9534f; margin-top: 15px; font-weight: bold; text-align: center; }
+        
+        /* Course Cards (Collapsible) */
+        .course-card { background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; overflow: hidden; }
+        .course-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; user-select: none; }
+        .course-header:hover { background: #004482; }
+        .course-title-area { display: flex; align-items: center; gap: 10px; }
+        .course-header h2 { margin: 0; font-size: 1.4em; }
+        .toggle-icon { font-size: 1.2em; transition: transform 0.2s; }
+        .course-grade { font-size: 1.2em; font-weight: bold; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; }
+        
+        /* Assignments */
+        .assignments-list { padding: 0; margin: 0; list-style: none; display: none; /* Hidden by default */ }
+        .assignment-item { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .assignment-item:hover { background-color: #f9f9f9; border-left: 4px solid var(--primary); }
+        .assignment-item:last-child { border-bottom: none; }
+        .assignment-name { font-weight: bold; color: #444; }
+        .assignment-score { background: #eef2f5; padding: 5px 10px; border-radius: 5px; font-weight: bold; color: var(--primary); }
+        .no-data { padding: 20px; text-align: center; color: #777; font-style: italic; display: block !important; }
+
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 20px; box-sizing: border-box;}
+        .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; border: none; background: none; }
+        .close-btn:hover { color: #333; }
+        .modal-title { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px;}
+        .modal-body { margin-top: 20px; line-height: 1.6; color: #444; }
+        .modal-body img { max-width: 100%; height: auto; }
+        .submit-link-btn { display: inline-block; margin-top: 25px; background: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; text-align: center; }
+        .submit-link-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <div class="top-bar">
+            <h1>Advanced Canvas Dashboard</h1>
+            <button class="settings-btn" onclick="toggleSettings()">⚙️ Settings</button>
+        </div>
+
+        <div id="controlsCard" class="controls-card">
+            <div class="input-group">
+                <label for="canvasDomain">Canvas Domain</label>
+                <input type="text" id="canvasDomain" value="cuhsd.instructure.com">
+            </div>
+            <div class="input-group">
+                <label for="apiToken">API Access Token</label>
+                <input type="text" id="apiToken" placeholder="Paste your Canvas token here">
+            </div>
+            <button id="fetchBtn" onclick="loadEverything()">Save & Load Classes</button>
+            <div id="errorMessage" class="error"></div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <div id="assignmentModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeModal(true)">&times;</button>
+            <h2 id="modalTitle" class="modal-title">Assignment Name</h2>
+            <div id="modalBody" class="modal-body"></div>
+            <a id="modalSubmitLink" href="#" target="_blank" class="submit-link-btn">Go to Canvas to Submit</a>
+        </div>
+    </div>
+
+    <script>
+        const CLOUDFLARE_WORKER_URL = 'https://canvas-proxy.567394.workers.dev/';
+
+        // --- Auto-Load Saved API Token ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedDomain = localStorage.getItem('canvasDomain');
+            const savedToken = localStorage.getItem('apiToken');
+            
+            if (savedDomain) document.getElementById('canvasDomain').value = savedDomain;
+            
+            // If token exists, auto-fill, hide the settings menu, and automatically load grades!
+            if (savedToken) {
+                document.getElementById('apiToken').value = savedToken;
+                document.getElementById('controlsCard').style.display = 'none';
+                loadEverything();
+            }
+        });
+
+        // --- Toggle Settings Visibility ---
+        function toggleSettings() {
+            const card = document.getElementById('controlsCard');
+            card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
+        }
+
+        // --- Toggle Course Expansion ---
+        function toggleCourse(courseId) {
+            const list = document.getElementById(`assignments-${courseId}`);
+            const icon = document.getElementById(`icon-${courseId}`);
+            
+            if (list.style.display === 'none' || list.style.display === '') {
+                list.style.display = 'block';
+                icon.innerHTML = '▼'; // Point down
+            } else {
+                list.style.display = 'none';
+                icon.innerHTML = '▶'; // Point right
+            }
+        }
+
+        async function fetchFromCanvas(endpoint) {
+            const domain = document.getElementById('canvasDomain').value.trim();
+            const token = document.getElementById('apiToken').value.trim();
+
+            const response = await fetch(CLOUDFLARE_WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token, domain: domain, endpoint: endpoint })
+            });
+
+            if (!response.ok) throw new Error("Server error or invalid token.");
+            const data = await response.json();
+            if (data.errors) throw new Error(data.errors[0].message || "Canvas API Error");
+            
+            return data;
+        }
+
+        async function loadEverything() {
+            const domain = document.getElementById('canvasDomain').value.trim();
+            const token = document.getElementById('apiToken').value.trim();
+            const resultsDiv = document.getElementById('results');
+            const errorDiv = document.getElementById('errorMessage');
+            const btn = document.getElementById('fetchBtn');
+            
+            if (!token) {
+                errorDiv.innerText = "Please enter your API token.";
+                return;
+            }
+
+            // Save the token and domain securely in the browser's local storage
+            localStorage.setItem('canvasDomain', domain);
+            localStorage.setItem('apiToken', token);
+            
+            // Auto-hide controls upon successful submission
+            document.getElementById('controlsCard').style.display = 'none';
+
+            resultsDiv.innerHTML = '<h3 style="text-align:center;">Fetching classes...</h3>';
+            errorDiv.innerHTML = '';
+            btn.innerText = "Loading...";
+            btn.disabled = true;
+
+            try {
+                const courses = await fetchFromCanvas('/api/v1/courses?enrollment_state=active&include[]=total_scores&per_page=100');
+                resultsDiv.innerHTML = ''; 
+                
+                if (courses.length === 0) {
+                    resultsDiv.innerHTML = '<p class="no-data">No active courses found.</p>';
+                    return;
+                }
+
+                for (const course of courses) {
+                    if (!course.name || course.access_restricted_by_date) continue;
+
+                    let courseGrade = "N/A";
+                    if (course.enrollments && course.enrollments.length > 0) {
+                        const score = course.enrollments[0].computed_current_score;
+                        const letter = course.enrollments[0].computed_current_grade;
+                        if (score) courseGrade = `${score}% ${letter ? `(${letter})` : ''}`;
+                    }
+
+                    // Created Collapsible Header
+                    const courseCard = document.createElement('div');
+                    courseCard.className = 'course-card';
+                    courseCard.innerHTML = `
+                        <div class="course-header" onclick="toggleCourse('${course.id}')" title="Click to expand/collapse">
+                            <div class="course-title-area">
+                                <span id="icon-${course.id}" class="toggle-icon">▶</span>
+                                <h2>${course.name}</h2>
+                            </div>
+                            <div class="course-grade">Overall: ${courseGrade}</div>
+                        </div>
+                        <ul class="assignments-list" id="assignments-${course.id}">
+                            <li class="no-data" style="display:block;">Loading assignments...</li>
+                        </ul>
+                    `;
+                    resultsDiv.appendChild(courseCard);
+
+                    // Fetch assignments for this course
+                    try {
+                        const submissionsEndpoint = `/api/v1/courses/${course.id}/students/submissions?student_ids[]=self&include[]=assignment&per_page=100`;
+                        const submissions = await fetchFromCanvas(submissionsEndpoint);
+                        
+                        const listElement = document.getElementById(`assignments-${course.id}`);
+                        listElement.innerHTML = ''; 
+
+                        if (!submissions || submissions.length === 0) {
+                            listElement.innerHTML = '<li class="no-data" style="display:block;">No graded assignments found.</li>';
+                            continue;
+                        }
+
+                        submissions.forEach(sub => {
+                            if (!sub.assignment) return;
+                            
+                            const score = sub.score !== null ? sub.score : '-';
+                            const maxPoints = sub.assignment.points_possible !== null ? sub.assignment.points_possible : '-';
+                            const gradeText = `${score} / ${maxPoints}`;
+
+                            const li = document.createElement('li');
+                            li.className = 'assignment-item';
+                            const safeDescription = encodeURIComponent(sub.assignment.description || "<i>No description provided.</i>");
+                            const link = sub.assignment.html_url;
+
+                            li.innerHTML = `
+                                <span class="assignment-name">${sub.assignment.name}</span>
+                                <span class="assignment-score">${gradeText}</span>
+                            `;
+                            
+                            li.onclick = () => openModal(sub.assignment.name, safeDescription, link);
+                            listElement.appendChild(li);
+                        });
+
+                    } catch (err) {
+                        document.getElementById(`assignments-${course.id}`).innerHTML = '<li class="no-data" style="color:red; display:block;">Error loading assignments.</li>';
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+                errorDiv.innerText = `Error: ${error.message}`;
+                resultsDiv.innerHTML = '';
+                document.getElementById('controlsCard').style.display = 'block'; // Show controls again if it fails
+            } finally {
+                btn.innerText = "Save & Load Classes";
+                btn.disabled = false;
+            }
+        }
+
+        // Modal Functions
+        function openModal(title, encodedDesc, url) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = decodeURIComponent(encodedDesc);
+            document.getElementById('modalSubmitLink').href = url;
+            document.getElementById('assignmentModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(force = false) {
+            if (force === true || event.target.id === 'assignmentModal') {
+                document.getElementById('assignmentModal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Canvas Dashboard</title>
+    <title>Dashboard+</title>
+    <link id="favicon" rel="icon" type="image/png" href="https://cuhsd.instructure.com/apple-touch-icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         :root { 
             --bg: #fafafa; 
-            --primary: #E33E2B; /* Official Canvas Red */
+            --primary: #E33E2B; 
             --text: #202124; 
             --text-light: #5f6368;
             --card: #ffffff; 
@@ -29,7 +30,7 @@
             line-height: 1.5;
         }
 
-        /* Modern Top Loading Bar */
+        /* Loading Bar */
         .loading-bar-container {
             width: 100%; height: 4px; background: transparent;
             position: fixed; top: 0; left: 0; z-index: 2000; overflow: hidden; display: none;
@@ -41,18 +42,16 @@
         }
         @keyframes loading-animation {
             0% { left: -50%; width: 10%; }
-			20% { width: 60%; }
+            20% { width: 60%; }
             50% { width: 40%; }
-			80% { width: 20%; }
+            80% { width: 20%; }
             100% { left: 100%; width: 10%; }
         }
         
         .dashboard-container { width: 100%; max-width: 900px; }
         
-        /* Modern Top Bar */
-        .top-bar { 
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; 
-        }
+        /* Top Bar */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .logo-area img { height: 45px; border-radius: 8px; }
         .top-bar h1 { margin: 0; font-weight: 400; font-size: 1.8em; letter-spacing: -0.5px; }
@@ -89,7 +88,7 @@
         button.action-btn:disabled { background-color: #ccc; cursor: not-allowed; }
         .error { color: #d9534f; margin-top: 15px; font-weight: 500; text-align: center; font-size: 0.9em; }
         
-        /* Clean Course Cards */
+        /* Course Cards */
         .course-card { 
             background: var(--card); border-radius: var(--radius); 
             border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
@@ -110,8 +109,21 @@
         }
         .term-label { font-size: 0.75em; color: var(--text-light); font-weight: 400; margin-top: 4px; display: block; text-align: right; }
         
-        /* Assignments List */
-        .assignments-list { padding: 0; margin: 0; list-style: none; display: none; border-top: 1px solid var(--border); }
+        /* Tabs System */
+        .course-body { display: none; border-top: 1px solid var(--border); }
+        .course-tabs { display: flex; background: #fdfdfd; border-bottom: 1px solid var(--border); }
+        .tab-btn { 
+            flex: 1; padding: 14px; border: none; background: none; cursor: pointer; 
+            font-family: 'Inter', sans-serif; font-size: 0.95em; font-weight: 400; 
+            color: var(--text-light); transition: 0.2s; border-bottom: 2px solid transparent;
+        }
+        .tab-btn:hover { background: #f5f5f5; color: var(--text); }
+        .tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Lists */
+        .assignments-list, .module-list { padding: 0; margin: 0; list-style: none; }
         .assignment-item { 
             padding: 18px 25px; border-bottom: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center; 
@@ -126,14 +138,30 @@
         .status-unsubmitted { color: #d9534f; }
         .status-submitted { color: #f0ad4e; }
         .status-graded { color: #5cb85c; }
+        .assignment-date { font-size: 0.75em; color: var(--text-light); margin-top: 2px; }
 
         .assignment-score { 
             font-weight: 500; color: var(--text-light); font-size: 0.9em; 
-            background: #f1f3f4; padding: 6px 12px; border-radius: 6px; 
+            background: #f1f3f4; padding: 6px 12px; border-radius: 6px; white-space: nowrap;
         }
+
+        /* Module Styles */
+        .module-header { 
+            padding: 12px 25px; background: #f8f9fa; font-weight: 500; 
+            font-size: 0.9em; color: var(--text); border-bottom: 1px solid var(--border); 
+        }
+        .module-item { 
+            padding: 14px 25px 14px 40px; border-bottom: 1px solid var(--border); 
+            font-size: 0.9em; display: flex; text-decoration: none; color: var(--text-light); 
+            transition: background 0.2s; align-items: center; gap: 10px;
+        }
+        .module-item:hover { background: #fcfcfc; color: var(--primary); }
+        .module-item:last-child { border-bottom: none; }
+        .module-type { font-size: 0.7em; background: #eee; padding: 3px 6px; border-radius: 4px; text-transform: uppercase; }
+
         .no-data { padding: 30px; text-align: center; color: var(--text-light); font-weight: 300; display: block !important; }
 
-        /* Modern Modal */
+        /* Modal */
         .modal-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); 
@@ -207,7 +235,7 @@
             
             if (savedDomain) {
                 document.getElementById('canvasDomain').value = savedDomain;
-                document.getElementById('dynamicLogo').src = `https://${savedDomain}/apple-touch-icon.png`;
+                updateLogos(savedDomain);
             }
             
             if (savedToken) {
@@ -217,22 +245,40 @@
             }
         });
 
+        function updateLogos(domain) {
+            const iconUrl = `https://${domain}/apple-touch-icon.png`;
+            document.getElementById('dynamicLogo').src = iconUrl;
+            document.getElementById('favicon').href = iconUrl;
+        }
+
         function toggleSettings() {
             const card = document.getElementById('controlsCard');
             card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
         }
 
         function toggleCourse(courseId) {
-            const list = document.getElementById(`assignments-${courseId}`);
+            const body = document.getElementById(`course-body-${courseId}`);
             const icon = document.getElementById(`icon-${courseId}`);
             
-            if (list.style.display === 'none' || list.style.display === '') {
-                list.style.display = 'block';
+            if (body.style.display === 'none' || body.style.display === '') {
+                body.style.display = 'block';
                 icon.innerHTML = '▼'; 
             } else {
-                list.style.display = 'none';
+                body.style.display = 'none';
                 icon.innerHTML = '▶'; 
             }
+        }
+
+        function switchTab(event, courseId, tabName) {
+            const body = document.getElementById(`course-body-${courseId}`);
+            
+            // Remove active classes
+            body.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            body.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active classes to clicked tab
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}-${courseId}`).classList.add('active');
         }
 
         async function fetchFromCanvas(endpoint) {
@@ -267,14 +313,14 @@
 
             localStorage.setItem('canvasDomain', domain);
             localStorage.setItem('apiToken', token);
-            document.getElementById('dynamicLogo').src = `https://${domain}/apple-touch-icon.png`;
+            updateLogos(domain);
             document.getElementById('controlsCard').style.display = 'none';
 
             resultsDiv.innerHTML = '';
             errorDiv.innerHTML = '';
             btn.innerText = "Loading...";
             btn.disabled = true;
-            loadingBar.style.display = 'block'; // Show Loading Bar
+            loadingBar.style.display = 'block';
 
             try {
                 const coursesEndpoint = '/api/v1/courses?enrollment_state=active&include[]=total_scores&include[]=current_grading_period_scores&include[]=term&per_page=100';
@@ -295,7 +341,6 @@
                         const enrollment = course.enrollments[0];
                         const score = enrollment.current_period_computed_current_score || enrollment.computed_current_score;
                         const letter = enrollment.current_period_computed_current_grade || enrollment.computed_current_grade;
-                        
                         if (score) courseGrade = `${score}% ${letter ? `(${letter})` : ''}`;
                     }
 
@@ -312,71 +357,124 @@
                                 <span class="term-label">${termName}</span>
                             </div>
                         </div>
-                        <ul class="assignments-list" id="assignments-${course.id}">
-                            <li class="no-data" style="display:block;">Loading assignments...</li>
-                        </ul>
+                        <div id="course-body-${course.id}" class="course-body">
+                            <div class="course-tabs">
+                                <button class="tab-btn active" onclick="switchTab(event, '${course.id}', 'assignments')">Assignments</button>
+                                <button class="tab-btn" onclick="switchTab(event, '${course.id}', 'modules')">Modules & Materials</button>
+                            </div>
+                            
+                            <div id="tab-assignments-${course.id}" class="tab-content active">
+                                <ul class="assignments-list" id="assignments-${course.id}">
+                                    <li class="no-data">Loading assignments...</li>
+                                </ul>
+                            </div>
+                            
+                            <div id="tab-modules-${course.id}" class="tab-content">
+                                <ul class="module-list" id="modules-${course.id}">
+                                    <li class="no-data">Loading modules...</li>
+                                </ul>
+                            </div>
+                        </div>
                     `;
                     resultsDiv.appendChild(courseCard);
 
+                    // Fetch Assignments
                     try {
                         const submissionsEndpoint = `/api/v1/courses/${course.id}/students/submissions?student_ids[]=self&include[]=assignment&per_page=100`;
                         let submissions = await fetchFromCanvas(submissionsEndpoint);
-                        
                         const listElement = document.getElementById(`assignments-${course.id}`);
                         listElement.innerHTML = ''; 
 
                         if (!submissions || submissions.length === 0) {
-                            listElement.innerHTML = '<li class="no-data" style="display:block;">No graded assignments found.</li>';
-                            continue;
+                            listElement.innerHTML = '<li class="no-data">No assignments found.</li>';
+                        } else {
+                            // SORTING LOGIC: By Due Date (Most Recent First)
+                            submissions.sort((a, b) => {
+                                const dateA = a.assignment && a.assignment.due_at ? new Date(a.assignment.due_at) : new Date(0);
+                                const dateB = b.assignment && b.assignment.due_at ? new Date(b.assignment.due_at) : new Date(0);
+                                return dateB - dateA;
+                            });
+
+                            submissions.forEach(sub => {
+                                if (!sub.assignment) return;
+                                
+                                const score = sub.score !== null ? sub.score : '-';
+                                const maxPoints = sub.assignment.points_possible !== null ? sub.assignment.points_possible : '-';
+                                const gradeText = `${score} / ${maxPoints}`;
+
+                                let statusText = "Graded";
+                                let statusClass = "status-graded";
+                                if (sub.workflow_state === 'unsubmitted') {
+                                    statusText = "Not Done";
+                                    statusClass = "status-unsubmitted";
+                                } else if (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review') {
+                                    statusText = "Submitted (Ungraded)";
+                                    statusClass = "status-submitted";
+                                }
+
+                                const rawDate = sub.assignment.due_at ? new Date(sub.assignment.due_at) : null;
+                                const dateString = rawDate ? rawDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Due Date';
+
+                                const li = document.createElement('li');
+                                li.className = 'assignment-item';
+                                const safeDescription = encodeURIComponent(sub.assignment.description || "<i>No details provided.</i>");
+                                const link = sub.assignment.html_url;
+
+                                li.innerHTML = `
+                                    <div class="assignment-info">
+                                        <span class="assignment-name">${sub.assignment.name}</span>
+                                        <span class="assignment-status ${statusClass}">${statusText}</span>
+                                        <span class="assignment-date">Due: ${dateString}</span>
+                                    </div>
+                                    <span class="assignment-score">${gradeText}</span>
+                                `;
+                                
+                                li.onclick = () => openModal(sub.assignment.name, safeDescription, link);
+                                listElement.appendChild(li);
+                            });
                         }
-
-                        // SORTING LOGIC: Unsubmitted (1) -> Submitted (2) -> Graded (3)
-                        submissions.sort((a, b) => {
-                            const getWeight = (sub) => {
-                                if (sub.workflow_state === 'unsubmitted') return 1;
-                                if (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review') return 2;
-                                return 3; // Graded or other
-                            };
-                            return getWeight(a) - getWeight(b);
-                        });
-
-                        submissions.forEach(sub => {
-                            if (!sub.assignment) return;
-                            
-                            const score = sub.score !== null ? sub.score : '-';
-                            const maxPoints = sub.assignment.points_possible !== null ? sub.assignment.points_possible : '-';
-                            const gradeText = `${score} / ${maxPoints}`;
-
-                            // Determine Status Text and Color Class
-                            let statusText = "Graded";
-                            let statusClass = "status-graded";
-                            if (sub.workflow_state === 'unsubmitted') {
-                                statusText = "Not Done";
-                                statusClass = "status-unsubmitted";
-                            } else if (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review') {
-                                statusText = "Submitted (Ungraded)";
-                                statusClass = "status-submitted";
-                            }
-
-                            const li = document.createElement('li');
-                            li.className = 'assignment-item';
-                            const safeDescription = encodeURIComponent(sub.assignment.description || "<i>No details provided.</i>");
-                            const link = sub.assignment.html_url;
-
-                            li.innerHTML = `
-                                <div class="assignment-info">
-                                    <span class="assignment-name">${sub.assignment.name}</span>
-                                    <span class="assignment-status ${statusClass}">${statusText}</span>
-                                </div>
-                                <span class="assignment-score">${gradeText}</span>
-                            `;
-                            
-                            li.onclick = () => openModal(sub.assignment.name, safeDescription, link);
-                            listElement.appendChild(li);
-                        });
-
                     } catch (err) {
-                        document.getElementById(`assignments-${course.id}`).innerHTML = '<li class="no-data" style="color:#d9534f; display:block;">Failed to load assignments.</li>';
+                        document.getElementById(`assignments-${course.id}`).innerHTML = '<li class="no-data" style="color:#d9534f;">Failed to load assignments.</li>';
+                    }
+
+                    // Fetch Modules
+                    try {
+                        const modulesEndpoint = `/api/v1/courses/${course.id}/modules?include[]=items&per_page=100`;
+                        const modules = await fetchFromCanvas(modulesEndpoint);
+                        const modElement = document.getElementById(`modules-${course.id}`);
+                        modElement.innerHTML = '';
+
+                        if (!modules || modules.length === 0) {
+                            modElement.innerHTML = '<li class="no-data">No modules found.</li>';
+                        } else {
+                            modules.forEach(mod => {
+                                const modHeader = document.createElement('li');
+                                modHeader.className = 'module-header';
+                                modHeader.innerText = mod.name;
+                                modElement.appendChild(modHeader);
+
+                                if (mod.items && mod.items.length > 0) {
+                                    mod.items.forEach(item => {
+                                        const li = document.createElement('li');
+                                        const link = item.html_url || '#';
+                                        let niceType = item.type;
+                                        if (item.type === 'File') niceType = 'Document';
+                                        if (item.type === 'Assignment') niceType = 'Task';
+                                        if (item.type === 'Page') niceType = 'Page';
+
+                                        li.innerHTML = `
+                                            <a href="${link}" target="_blank" class="module-item">
+                                                <span class="module-type">${niceType}</span>
+                                                ${item.title}
+                                            </a>
+                                        `;
+                                        modElement.appendChild(li);
+                                    });
+                                }
+                            });
+                        }
+                    } catch(err) {
+                        document.getElementById(`modules-${course.id}`).innerHTML = '<li class="no-data" style="color:#d9534f;">Failed to load modules.</li>';
                     }
                 }
 
@@ -388,7 +486,7 @@
             } finally {
                 btn.innerText = "Authenticate & Load";
                 btn.disabled = false;
-                loadingBar.style.display = 'none'; // Hide Loading Bar when done
+                loadingBar.style.display = 'none';
             }
         }
 

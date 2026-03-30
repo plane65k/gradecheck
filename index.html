@@ -306,11 +306,12 @@
             }
         });
 
-        function updateLogos(domain) {
-            const iconUrl = `https://${domain}/apple-touch-icon.png`;
-            document.getElementById('dynamicLogo').src = iconUrl;
-            document.getElementById('favicon').href = iconUrl;
-        }
+       function updateLogos(domain) {
+    const iconUrl = 'https://teaching.utoronto.ca/wp-content/uploads/canvas-logo-1024x1020-1.png';
+    document.getElementById('dynamicLogo').src = iconUrl;
+    document.getElementById('favicon').href = iconUrl;
+}
+
 
         function toggleSettings() {
             const card = document.getElementById('controlsCard');
